@@ -1,0 +1,37 @@
+---
+name: Install semantic-release (non-js project)
+description: Installs globally and saves the npm cache without a package.json
+
+inputs:
+  node-version:
+    description: Version of node to install
+    required: true
+
+  semantic-release-version:
+    description: Version of the semantic-release tool to install
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Configure node cache
+      id: node-cache
+      uses: actions/cache@v3
+      with:
+        path: ~/.npm
+        key: ${{ runner.os }}-${{ env.name }}-${{ hashFiles('.github/workflows/**') }}
+      env:
+        name: release-npm-tools-${{ inputs.semantic-release-version }}
+
+    - name: Configure node
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ inputs.node-version }}
+
+    - name: Install release dependencies
+      shell: bash
+      run: npm install -g semantic-release@${{ env.semantic-release-version }} @semantic-release/exec
+
+    - name: Verify node module state
+      shell: bash
+      run: npm list -g

@@ -1,0 +1,84 @@
+---
+name: Install Python & Poetry
+description: |
+  Configures python, poetry, installs the project with cached dependencies.
+
+  No other poetry commands are executed within this action.
+
+  Pre-requisites
+  ---
+    - repository is checked out
+
+inputs:
+  python-version:
+    description: Version of python to install
+    required: true
+
+  poetry-version:
+    description: Version of poetry to install
+    required: true
+
+  cache-name:
+    description: |
+      Unique name for this cache in case it needs disambiguating
+
+      A virtual environment may contain different dependencies, e.g.
+
+        - poetry install --only release
+
+      This allows to distinguish between, e.g. by job name
+    required: true
+
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-python@v4
+      id: setup-python
+      with:
+        python-version: ${{ inputs.python-version }}
+        cache: pip
+  
+    - name: Configure poetry cache
+      id: poetry-cache
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.local
+          poetry.toml
+        key: poetry-${{ inputs.poetry-version }}
+  
+    - name: Prepare cache
+      id: prepare-project-cache
+      shell: bash
+      run: |
+        poetry_version="${{ env.POETRY_VERSION }}"
+        python_version="${{ steps.setup-python.outputs.python-version }}"
+        os="${{ runner.os }}"
+        job_key="${os}-python-${python_version}-poetry-${poetry_version}"
+        deps_key=deps-${{ hashFiles('**/poetry.lock') }}
+        workflow_key=workflow-${{ hashFiles('.github/workflows/**') }}
+        runspec_key="${job_key}-${deps_key}-${workflow_key}"
+  
+        echo "Host OS - $os"
+        echo " Python - $python_version"
+        echo " Poetry - $poetry_version"
+        echo "    Key - $runspec_key"
+  
+        echo "key=${runspec_key}" | tee -a $GITHUB_OUTPUT
+  
+    - name: Configure dependency cache
+      id: project-cache
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cache/pypoetry/virtualenvs
+        key: project-venv-${{ inputs.cache-name }}-${{ steps.prepare-project-cache.outputs.key }}
+
+    - name: Install and configure Poetry
+      if: steps.poetry-cache.outputs.cache-hit != 'true'
+      uses: snok/install-poetry@v1
+      with:
+        version: ${{ inputs.poetry-version }}
+        virtualenvs-create: true
+        installer-parallel: true
