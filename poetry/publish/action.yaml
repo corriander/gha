@@ -1,0 +1,62 @@
+---
+name: Publish the project with poetry
+description: |
+  The project will be built with the PEP440 equivalent of the version number,
+  dist/* added to the release and ultimately published to a package feed.
+
+inputs:
+  python-version:
+    description: Python version to use for the virtual environment
+    required: true
+
+  poetry-version:
+    description: Poetry version to use for orchestrating the tests
+    required: true
+
+  release-tag:
+    description: |
+      Project version tag the release was published against.
+
+      Note that even though this is a python project, the version tag could be 
+      SemVer rather than PEP440. The package will be built against the PEP440
+      translation.
+
+      The version number is likely to be prefixed with 'v'
+    required: true
+
+  github-token:
+    description: |
+      GITHUB_TOKEN used to upload assets to the gh release
+
+      Requires write permission on contents, issues, pull-requests and id-token
+
+runs:
+  using: composite
+
+  steps:
+    - uses: corriander/django-quota-core/ci/gha/poetry/install@alpha
+      with:
+        python-version: ${{ inputs.python-version }}
+        poetry-version: ${{ inputs.poetry-version }}
+        cache-name: release
+
+      # use pdv to build the package without modifying the repo
+      # pip cache is global, so this should be cached
+    - name: Install poetry plugins
+      shell: bash
+      run: |
+        ~/.local/venv/bin/pip install 'poetry-dynamic-versioning[plugin]'
+
+    - name: Build
+      shell: bash
+      run: poetry build
+
+    - name: Upload release assets
+      uses: svenstaro/upload-release-action@v2
+      with:
+        repo_token: ${{ inputs.github-token }}
+        file: dist/*
+        tag: ${{ inputs.release-tag }}
+        file_glob: true
+        make_latest: false # let sr handle this
+        #release_name: ... # possible to override sr's semver name with the pep440 one here via dunamai?

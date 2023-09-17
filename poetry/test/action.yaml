@@ -1,0 +1,43 @@
+---
+name: Test poetry project
+description: |
+  Sets up python, poetry and the project for testing with caching.
+
+  The project is assumed to have a "tests" command.
+
+  Pre-requisites
+  ---
+    - the repo is checked out
+
+inputs:
+  python-version:
+    description: Python version to use for the virtual environment
+    required: true
+
+  poetry-version:
+    description: Poetry version to use for orchestrating the tests
+    required: true
+
+runs:
+  using: composite
+
+  steps:
+    - uses: corriander/django-quota-core/ci/gha/poetry/install@alpha
+      with:
+        python-version: ${{ inputs.python-version }}
+        poetry-version: ${{ inputs.poetry-version }}
+        cache-name: validation
+
+    - name: Install project dependencies
+      if: steps.project-cache.outputs.cache-hit != 'true'
+      shell: bash
+      run: poetry install --no-interaction --no-root
+
+    - name: Install project root
+      shell: bash
+      run: poetry install --no-interaction
+  
+    - name: "poetry: Test package"
+      shell: bash
+      run: |
+        poetry run tests
