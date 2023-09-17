@@ -31,7 +31,7 @@ outputs:
 runs:
   using: composite
   steps:
-    - uses: corriander/django-quota-core/ci/gha/semantic-release/agnostic-install@alpha
+    - uses: corriander/django-quota-core/ci/gha/semantic-release/agnostic-install@main
       with:
         node-version: ${{ env.node-version }}
         semantic-release-version: ${{ env.semantic-release-version }}

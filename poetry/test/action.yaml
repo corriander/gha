@@ -36,13 +36,13 @@ runs:
   using: composite
 
   steps:
-    - uses: corriander/django-quota-core/ci/gha/poetry/install@feature/codeartifact-connect
+    - uses: corriander/django-quota-core/ci/gha/poetry/install@main
       with:
         python-version: ${{ inputs.python-version }}
         poetry-version: ${{ inputs.poetry-version }}
         cache-name: validation
 
-    - uses: corriander/django-quota-core/ci/gha/poetry/connect@feature/codeartifact-connect
+    - uses: corriander/django-quota-core/ci/gha/poetry/connect@main
       if: inputs.repository != ''
       with:
         repository: ${{ inputs.repository }}
