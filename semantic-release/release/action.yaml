@@ -1,0 +1,41 @@
+---
+name: Create a github release
+description: |
+  The version number is calculated from commits and a releae created.
+
+  Subsequent steps may add assets to the release or otherwise modify its 
+  metadata.
+
+inputs:
+  node-version:
+    description: The version of node to install the tooling
+    required: true
+
+  semantic-release-version:
+    description: The version of the semantic-release tool to use
+    required: true
+
+  github-token:
+    description: GITHUB_TOKEN with appropriate permissions set in the workflow
+    required: true
+  
+runs:
+  using: composite
+  steps:
+    - uses: corriander/gha/semantic-release/agnostic-install@alpha
+      with:
+        node-version: ${{ env.node-version }}
+        semantic-release-version: ${{ env.semantic-release-version }}
+
+    - name: Semantic Release
+      id: semantic-release
+      run: npx semantic-release -v
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+
+    - name: Summary
+      shell: bash
+      run: |
+        echo "**Released**: ${{ steps.semantic-release.outputs.releasable }}" >>$GITHUB_STEP_SUMMARY
+        echo " **SemVer**: ${{ steps.semantic-release.outputs.next-version }}" >>$GITHUB_STEP_SUMMARY

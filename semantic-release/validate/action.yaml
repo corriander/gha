@@ -1,0 +1,45 @@
+---
+name: Validate a release without making any changes
+description: |
+  Used to inspect the next version before actually performing the release.
+
+  This is needed in some build processes because there's a chicken-and-egg situ
+  when you need to build the package before the release.
+
+
+inputs:
+  node-version:
+    description: The version of node to install the tooling
+    required: true
+
+  semantic-release-version:
+    description: The version of the semantic-release tool to use
+    required: true
+
+  github-token:
+    description: GITHUB_TOKEN with appropriate permissions set in the workflow
+    required: true
+  
+runs:
+  using: composite
+  steps:
+    - uses: corriander/gha/semantic-release/agnostic-install@alpha
+      with:
+        node-version: ${{ env.node-version }}
+        semantic-release-version: ${{ env.semantic-release-version }}
+
+    - name: Semantic Release
+      id: semantic-release
+      shell: bash
+      run: npx semantic-release -v --dry-run
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+
+    - name: Summary
+      shell: bash
+      run: |
+        releasable=${{ steps.semantic-release.outputs.releasable }}
+        next_version=${{ steps.semantic-release.outputs.next-version }}
+
+        echo "  **Releasable**: ${releasable:-false}" >>$GITHUB_STEP_SUMMARY
+        echo "**Next Version**: ${next_version:--}" >>$GITHUB_STEP_SUMMARY
