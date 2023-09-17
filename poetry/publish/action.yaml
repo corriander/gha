@@ -49,14 +49,14 @@ runs:
   using: composite
 
   steps:
-    - uses: corriander/gha/poetry/install@alpha
+    - uses: corriander/gha/poetry/install@main
       with:
         python-version: ${{ inputs.python-version }}
         poetry-version: ${{ inputs.poetry-version }}
         cache-name: release
 
       # TODO: tweak API - just supply one or both repository-target/source and set them
-    - uses: corriander/gha/poetry/connect@feature/codeartifact-connect
+    - uses: corriander/gha/poetry/connect@main
       with:
         repository: ${{ inputs.repository }}
         type: push
@@ -86,4 +86,4 @@ runs:
     - name: Publish
       shell: bash
       run: |
-        poetry publish --dry-run
+        poetry publish
