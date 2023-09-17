@@ -18,15 +18,37 @@ inputs:
     description: Poetry version to use for orchestrating the tests
     required: true
 
+  repository:
+    description: Comma-separated name and url for a custom/private package source
+    required: false
+
+  repository-strict:
+    description: Restrict packages to the specified source (ignored if no package-source)
+    required: false
+    default: true
+
+  repository-auth:
+    description: Basic auth for the package source (user:auth, ignored if no package-source))
+    required: false
+      
+
 runs:
   using: composite
 
   steps:
-    - uses: corriander/gha/poetry/install@alpha
+    - uses: corriander/gha/poetry/install@feature/codeartifact-connect
       with:
         python-version: ${{ inputs.python-version }}
         poetry-version: ${{ inputs.poetry-version }}
         cache-name: validation
+
+    - uses: corriander/gha/poetry/connect@feature/codeartifact-connect
+      if: inputs.repository != ''
+      with:
+        repository: ${{ inputs.repository }}
+        type: pull
+        strict: ${{ inputs.repository-strict }}
+        auth: ${{ inputs.repository-auth }}
 
     - name: Install project dependencies
       if: steps.project-cache.outputs.cache-hit != 'true'

@@ -1,0 +1,56 @@
+---
+name: Connect poetry to a package feed
+
+inputs:
+  repository: 
+    description: |
+      Alias and URL of the repository
+
+      Should be of the form {alias}:{url} (':' in the alias are not allowed)
+    required: true
+
+  type:
+    description: The feed is for pulling or pushing packages to
+    required: true
+
+  strict:
+    description: |
+      Set this to prevent pulling from PyPI (directly at least)
+
+      This doesn't affect pushing packages; poetry is already capable of 
+      publishing to PyPI without this action.
+    required: false
+    default: false
+
+  auth:
+    description: Basic HTTP authentication {user}:{pass}
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Set source repository
+      if: ${{ inputs.type }} == 'pull'
+      shell: bash
+      run: |
+        extra_args=
+        if [ "${{ inputs.strict }}" == "true" ]; then
+          extra_args="--priority=default"
+        fi
+        repo=${{ inputs.repository }}
+        poetry source add ${extra_args} ${repo/:/ }
+
+    - name: Set publishable repository
+      if: ${{ inputs.type }} == 'push'
+      shell: bash
+      run: | 
+        repo=${{ inputs.repository }}
+        poetry config repositories.${repo/:/ }
+
+    - name: Add credentials
+      shell: bash
+      run: |
+        auth=${{ inputs.auth }}
+        repo=${{ inputs.repository }}
+        poetry config http-basic.${repo%%:*} ${auth/:/ }
+
