@@ -1,0 +1,109 @@
+---
+name: Get AWS CodeArtifact connection details via OIDC
+description: |
+  Fetch a repository endpoint and get an auth token via role-based access
+
+  Pre-requisites
+  ---
+    - aws credentials configured in the calling workflow
+    - permissions: 
+        id-token: write
+        contents: read
+
+inputs:
+  role:
+    description: |
+      The role to assume in the target account
+
+      The role must have the necessary permissions to read from the 
+      codeartifact feed, e.g. arn:aws:iam::1234567890:role/{role}
+    required: true
+
+  region:
+    description: AWS region, e.g. us-east-2
+    required: true
+
+  domain:
+    description: AWS CodeArtifact domain, e.g. {domain}/{repository}
+    required: true
+
+  # domain-owner is the account id
+
+  repository:
+    description: AWS CodeArtifact repository, i.e. {domain}/{repository}
+    required: true
+
+  format:
+    description: Package format, e.g. pypi, nuget, npm or maven
+    required: true
+
+  account-id:
+    description: |
+      The account containing the codeartifact domain.
+
+      This isn't strictly secret information but obfuscating it doesn't hurt.
+    required: true
+
+
+runs:
+  using: composite
+  steps:
+    - name: configure aws credentials
+      id: credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: arn:aws:iam::${{ inputs.account-id }}:role/${{ inputs.role }}
+        role-session-name: GitHub_to_AWS_via_FederatedOIDC
+        aws-region: ${{ inputs.region }}
+ 
+    - name: Get endpoint
+      id: codeartifact-endpoints
+      shell: bash
+      run: |
+        format=${{ inputs.format }}
+        endpoint=$(
+          aws codeartifact get-repository-endpoint \
+            --domain ${{ inputs.domain }} \
+            --domain-owner ${{ inputs.account-id }} \
+            --repository ${{ inputs.repository }} \
+            --format ${format} \
+            --region ${{ inputs.region }} \
+            --query repositoryEndpoint \
+            --output text
+        )
+ 
+        echo "::add-mask::$endpoint"
+ 
+        case ${{ inputs.format }} in
+          pypi)
+            source_url=${endpoint}simple/
+            target_url=${endpoint}
+            ;;
+          *)
+            source_url=${endpoint}
+            target_url=${endpoint}
+            ;;
+        esac
+        
+        repository_name="${{ inputs.domain }}-${{ inputs.repository }}"
+        echo "source-url=$source_url" | tee -a $GITHUB_OUTPUT
+        echo "target-url=$target_url" | tee -a $GITHUB_OUTPUT
+        echo "repository-source=$repository_name:$source_url" | tee -a $GITHUB_OUTPUT
+        echo "repository-target=$repository_name:$target_url" | tee -a $GITHUB_OUTPUT
+ 
+    - name: Get token
+      id: codeartifact-token
+      shell: bash
+      run: | 
+        token=$(
+          aws codeartifact get-authorization-token \
+            --domain ${{ inputs.domain }} \
+            --domain-owner ${{ inputs.account-id }} \
+            --query authorizationToken \
+            --output text
+        )
+
+        echo "::add-mask::$token"
+        echo "token=$token" >>$GITHUB_OUTPUT
+        echo "repository-auth=aws:$token" >>$GITHUB_OUTPUT
+ 
