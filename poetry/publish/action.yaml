@@ -29,6 +29,21 @@ inputs:
       GITHUB_TOKEN used to upload assets to the gh release
 
       Requires write permission on contents, issues, pull-requests and id-token
+    required: true
+
+  repository:
+    description: Comma-separated name and url for a custom/private package source
+    required: false
+
+  repository-strict:
+    description: Restrict packages to the specified source (ignored if no package-source)
+    required: false
+    default: true
+
+  repository-auth:
+    description: Basic auth for the package source (user:auth, ignored if no package-source))
+    required: false
+
 
 runs:
   using: composite
@@ -39,6 +54,13 @@ runs:
         python-version: ${{ inputs.python-version }}
         poetry-version: ${{ inputs.poetry-version }}
         cache-name: release
+
+      # TODO: tweak API - just supply one or both repository-target/source and set them
+    - uses: corriander/gha/poetry/connect@feature/codeartifact-connect
+      with:
+        repository: ${{ inputs.repository }}
+        type: push
+        auth: ${{ inputs.repository-auth }}
 
       # use pdv to build the package without modifying the repo
       # pip cache is global, so this should be cached
@@ -60,3 +82,8 @@ runs:
         file_glob: true
         make_latest: false # let sr handle this
         #release_name: ... # possible to override sr's semver name with the pep440 one here via dunamai?
+
+    - name: Publish
+      shell: bash
+      run: |
+        poetry publish --dry-run

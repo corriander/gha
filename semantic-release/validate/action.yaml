@@ -19,6 +19,14 @@ inputs:
   github-token:
     description: GITHUB_TOKEN with appropriate permissions set in the workflow
     required: true
+
+outputs:
+  releasable:
+    description: Whether or not the version is releasable
+    value: ${{ steps.semantic-release.outputs.releasable }}
+  next-version:
+    description: The next version, if releasable
+    value: ${{ steps.semantic-release.outputs.next-version }}
   
 runs:
   using: composite

@@ -44,6 +44,32 @@ inputs:
       This isn't strictly secret information but obfuscating it doesn't hurt.
     required: true
 
+outputs:
+  repository-source:
+    description: |
+      Name and endpoint of the repository for the requested format for fetching
+ 
+      In the form {name}:{endpoint} (where name=domain-repository), noting
+      the account id has been obfuscated with a shell style placeholder, 
+      ${AWS_ACCOUNT_ID} which will need replacing at the point of use to 
+      avoid GitHub omitting this due to it containing a 'secret'
+ 
+      Best efforts will be made to choose sensible defaults where variations
+      of the URL exist (e.g. /v3/index.json or /simple/ suffix).
+    value: ${{ steps.codeartifact-endpoints.outputs.repository-source }}
+ 
+  repository-target:
+    description: |
+      Name and endpoint of the repository for the requested format for publishing
+ 
+      See `package-source` output for more details.
+    value: ${{ steps.codeartifact-endpoints.outputs.repository-target }}
+ 
+  repository-auth:
+    description: |
+      HTTP Basic Auth in the form {user}:{token}. User is always 'aws'
+    value: ${{ steps.codeartifact-token.outputs.repository-auth }}
+
 
 runs:
   using: composite
