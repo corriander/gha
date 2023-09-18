@@ -1,0 +1,35 @@
+---
+name: 📦🚀 CI
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read # for checkout
+
+
+jobs:
+  release:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    concurrency: release
+    permissions:
+      contents: write # publish release
+      issues: write # comment on released issues
+      pull-requests: write # comment on release pull requests
+      id-token: write # enable use of oidc for npm provenence
+    env:
+      node-version: 18
+      semantic-release-version: 22
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - uses: corriander/gha/semantic-release/release@main
+        with:
+          node-version: ${{ env.node-version }}
+          semantic-release-version: ${{ env.semantic-release-version }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
