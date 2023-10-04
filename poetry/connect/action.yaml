@@ -20,7 +20,7 @@ inputs:
       This doesn't affect pushing packages; poetry is already capable of 
       publishing to PyPI without this action.
     required: false
-    default: false
+    default: true
 
   auth:
     description: Basic HTTP authentication {user}:{pass}
