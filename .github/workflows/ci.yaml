@@ -30,7 +30,7 @@ jobs:
           release-type: simple
           package-name: github-actions
 
-      - uses: corriander/gha/gh/shift-tags@main
+      - uses: corriander/gha/gh/shift-tags@v0
         if: ${{ steps.release.outputs.release_created }}
         with:
           major: ${{ steps.releease.outputs.major }}
