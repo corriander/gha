@@ -17,19 +17,20 @@ jobs:
     concurrency: release
     permissions:
       contents: write # publish release
-      issues: write # comment on released issues
       pull-requests: write # comment on release pull requests
-      id-token: write # enable use of oidc for npm provenence
-    env:
-      node-version: 18
-      semantic-release-version: 22
+
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - uses: corriander/gha/semantic-release/release@main
+      - uses: google-github-actions/release-please-action@v3
         with:
-          node-version: ${{ env.node-version }}
-          semantic-release-version: ${{ env.semantic-release-version }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          release-type: simple
+          package-name: github-actions
+
+      - uses: corriander/gha/gh/shift-tags@main
+        if: ${{ steps.release.outputs.release_created }}
+        with:
+          major: ${{ steps.releease.outputs.major }}
+          minor: ${{ steps.releease.outputs.minor }}

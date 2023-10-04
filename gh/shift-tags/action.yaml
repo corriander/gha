@@ -1,0 +1,39 @@
+---
+name: Shift Major/Minor version tags
+description: Used to move vX and vY tags to current release
+
+inputs:
+  major:
+    description: Major version
+    required: true
+
+  minor:
+    description: Minor version
+    required: true
+
+
+runs:
+  using: composite 
+  steps:
+    - name: Set commit author
+      shell: bash
+      run: |
+        git config user.name github-actions[bot]
+        git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+
+    - name: Fixup tags
+      shell: bash
+      run: |
+        major=${{ inputs.major }}
+        minor=${{ inputs.minor }}
+
+        # TODO: Is this required? unsure of what this is doing (some sort of github internal?)
+        #git remote add gh-token "https://{GITHUB_TOKEN}@github.com/google-github-actions/release-please-action.git"
+        git tag -d v${major} || true
+        git tag -d v${major}.${minor} || true
+        git push origin :v${major} || true
+        git push origin :v${major}.${minor} || true
+        git tag -a v${major} -m "Release v${major}"
+        git tag -a v${major}.${minor} -m "Release v${major}.${minor}"
+        git push origin v${major}
+        git push origin v${major}.${minor}
