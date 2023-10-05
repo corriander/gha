@@ -111,7 +111,7 @@ runs:
             ;;
         esac
         
-        repository_name="${{ inputs.domain }}-${{ inputs.repository }}"
+        repository_name=codeartifact
         echo "source-url=$source_url" | tee -a $GITHUB_OUTPUT
         echo "target-url=$target_url" | tee -a $GITHUB_OUTPUT
         echo "repository-source=$repository_name:$source_url" | tee -a $GITHUB_OUTPUT

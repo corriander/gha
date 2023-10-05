@@ -86,4 +86,5 @@ runs:
     - name: Publish
       shell: bash
       run: |
-        poetry publish
+        repo=${{ inputs.repository }}
+        poetry publish --repository=${repo%%:*}

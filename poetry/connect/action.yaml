@@ -38,7 +38,7 @@ runs:
           extra_args="--priority=default"
         fi
         repo=${{ inputs.repository }}
-        poetry source add ${extra_args} ${repo/:/ }
+        poetry source add ${extra_args} ${repo/:/ }simple/
 
     - name: Set publishable repository
       if: ${{ inputs.type }} == 'push'
