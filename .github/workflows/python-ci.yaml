@@ -1,0 +1,161 @@
+---
+name: ♻️ Reusable Python CI
+
+
+on:
+  workflow_call:
+    inputs:
+      mode:
+        description: Mode to run CI in {'feature', 'release'}
+        type: string
+        required: true
+
+      python-version:
+        description: Default/reference Python version
+        type: string
+        required: false
+        default: '3.11'
+
+      poetry-version:
+        description: Default/reference Poetry version
+        type: string
+        required: false
+        default: 1.6.0
+
+      node-version:
+        description: Version of node to install for semantic-release
+        type: string
+        required: false
+        default: '18'
+
+      semantic-release-version:
+        description: Version of semantic-release tool to use
+        type: string
+        required: false
+        default: '22'
+
+      python-set:
+        description: Python versions to test against (pass as list)
+        type: string
+        required: false
+      
+      os-set:
+        description: Runner OSs to test on (pass as list)
+        type: string
+        required: false
+
+
+jobs:
+  preflight-checks:
+    name: 🚥 Pre-flight Checks
+    if: inputs.mode == 'release'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: none
+      pull-requests: none
+
+    outputs:
+      releasable: ${{ steps.peek-release.outputs.releasable }}
+      next-version: ${{ steps.peek-release.outputs.next-version }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+        # TODO: may not need this (update release condition) 
+      - uses: corriander/gha/semantic-release/release@main
+        id: peek-release
+        with:
+          node-version: ${{ inputs.node-version }}
+          semantic-release-version: ${{ inputs.semantic-release-version }}
+          dry-run: true
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+  
+
+  validation:
+    name: 🧪 Validation
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ${{ inputs.python-set != '' && fromJson(inputs.python-set) || fromJson(format('["{0}"]', inputs.python-version)) }}
+        os: ${{ inputs.os-set != '' && fromJson(inputs.os-set) || fromJson('["ubuntu-latest"]') }}
+
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
+      issues: none
+      pull-requests: none
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: corriander/gha/aws/codeartifact-connect@main
+        id: artifacts
+        with:
+          role: ${{ vars.AWS_CODEARTIFACT_ROLE }}
+          region: ${{ vars.AWS_REGION }}
+          domain: ${{ vars.AWS_CODEARTIFACT_DOMAIN }}
+          repository: ${{ vars.AWS_CODEARTIFACT_REPOSITORY }}
+          format: pypi
+          account-id: ${{ secrets.AWS_ACCOUNT_ID }}
+
+      - uses: corriander/gha/poetry/test@main
+        with:
+          python-version: ${{ matrix.python-version }}
+          poetry-version: ${{ inputs.poetry-version }}
+          repository: ${{ steps.artifacts.outputs.repository-target }}  # we add /simple/ in poetry/connect
+          repository-strict: true
+          repository-auth: ${{ steps.artifacts.outputs.repository-auth }}
+
+
+  release:
+    name: 📦🚀 Release
+    if: inputs.mode == 'release'
+    needs: 
+      - preflight-checks
+      - validation
+    runs-on: ubuntu-latest
+    concurrency: release
+    permissions:
+      contents: write # publish release
+      issues: write # comment on released issues
+      pull-requests: write # comment on release pull requests
+      id-token: write # enable use of oidc for npm provenence
+
+    env:
+      python-version: ${{ inputs.python-version }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: corriander/gha/aws/codeartifact-connect@main
+        id: artifacts
+        with:
+          role: ${{ vars.AWS_CODEARTIFACT_ROLE }}
+          region: ${{ vars.AWS_REGION }}
+          domain: ${{ vars.AWS_CODEARTIFACT_DOMAIN }}
+          repository: ${{ vars.AWS_CODEARTIFACT_REPOSITORY }}
+          format: pypi
+          account-id: ${{ secrets.AWS_ACCOUNT_ID }}
+
+      - uses: corriander/gha/semantic-release/release@main
+        id: semantic-release
+        with:
+          node-version: ${{ inputs.node-version }}
+          semantic-release-version: ${{ inputs.semantic-release-version }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: corriander/gha/poetry/publish@main
+        if: steps.semantic-release.outputs.valid
+        with:
+          python-version: ${{ inputs.python-version }}
+          poetry-version: ${{ inputs.poetry-version }}
+          release-tag: v${{ steps.semantic-release.outputs.version }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          repository: ${{ steps.artifacts.outputs.repository-target }}
+          repository-auth: ${{ steps.artifacts.outputs.repository-auth }}

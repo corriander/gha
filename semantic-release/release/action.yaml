@@ -15,6 +15,11 @@ inputs:
     description: The version of the semantic-release tool to use
     required: true
 
+  dry-run:
+    description: Run semantic-release in dry-run mode (e.g. to peek a release)
+    required: false
+    default: 'false'
+
   github-token:
     description: GITHUB_TOKEN with appropriate permissions set in the workflow
     required: true
@@ -22,12 +27,12 @@ inputs:
 
 outputs:
   version:
-    description: The released version
-    value: ${{ steps.semantic-release.outputs.next-version }}
+    description: The release version determined by semantic-release
+    value: ${{ steps.review.outputs.version }}
 
-  released:
-    description: Whether a release was created
-    value: ${{ steps.semantic-release.outputs.releasable }}
+  valid:
+    description: Whether the version is a valid release version (i.e. not blank)
+    value: ${{ steps.review.outputs.valid }}
 
 
 runs:
@@ -35,18 +40,30 @@ runs:
   steps:
     - uses: corriander/gha/semantic-release/agnostic-install@main
       with:
-        node-version: ${{ env.node-version }}
-        semantic-release-version: ${{ env.semantic-release-version }}
+        node-version: ${{ inputs.node-version }}
+        semantic-release-version: ${{ inputs.semantic-release-version }}
 
-    - name: Semantic Release
+    - name: 🚀 Semantic Release
       id: semantic-release
-      run: npx semantic-release -v
       shell: bash
+      run: |
+        if [[ '${{ inputs.dry-run }}' == 'true' ]]; then
+          extra_args=--dry-run
+        fi
+        npx semantic-release -v $extra_args
       env:
         GITHUB_TOKEN: ${{ inputs.github-token }}
 
-    - name: Summary
+    - name: 🔬 Review release
+      id: review
       shell: bash
       run: |
-        echo "**Released**: ${{ steps.semantic-release.outputs.releasable }}" >>$GITHUB_STEP_SUMMARY
-        echo " **SemVer**: ${{ steps.semantic-release.outputs.next-version }}" >>$GITHUB_STEP_SUMMARY
+        version=${{ steps.semantic-release.outputs.version }}
+        if [[ -z "${version}" ]]; then
+          valid='false'
+        else
+          valid='true'
+        fi
+
+        echo "valid=${valid}" | tee -a $GITHUB_OUTPUT
+        echo "version=${version}" | tee -a $GITHUB_OUTPUT
