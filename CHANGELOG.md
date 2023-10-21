@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.1](https://github.com/corriander/gha/compare/v0.2.0...v0.2.1) (2023-10-21)
+
+
+### Bug Fixes
+
+* allow custom test commands ([60313d9](https://github.com/corriander/gha/commit/60313d99eaba88dd967903b015271224d5e29b65))
+
 ## [0.2.0](https://github.com/corriander/gha/compare/v0.1.1...v0.2.0) (2023-10-21)
 
 
