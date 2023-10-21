@@ -33,5 +33,5 @@ jobs:
       - uses: corriander/gha/gh/shift-tags@v0
         if: ${{ steps.release.outputs.release_created }}
         with:
-          major: ${{ steps.releease.outputs.major }}
-          minor: ${{ steps.releease.outputs.minor }}
+          major: ${{ steps.release.outputs.major }}
+          minor: ${{ steps.release.outputs.minor }}
