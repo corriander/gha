@@ -46,34 +46,6 @@ on:
 
 
 jobs:
-  preflight-checks:
-    name: 🚥 Pre-flight Checks
-    if: inputs.mode == 'release'
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      issues: none
-      pull-requests: none
-
-    outputs:
-      releasable: ${{ steps.peek-release.outputs.releasable }}
-      next-version: ${{ steps.peek-release.outputs.next-version }}
-
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-        # TODO: may not need this (update release condition) 
-      - uses: corriander/gha/semantic-release/release@main
-        id: peek-release
-        with:
-          node-version: ${{ inputs.node-version }}
-          semantic-release-version: ${{ inputs.semantic-release-version }}
-          dry-run: true
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-  
-
   validation:
     name: 🧪 Validation
     strategy:
@@ -115,7 +87,6 @@ jobs:
     name: 📦🚀 Release
     if: inputs.mode == 'release'
     needs: 
-      - preflight-checks
       - validation
     runs-on: ubuntu-latest
     concurrency: release
@@ -124,9 +95,6 @@ jobs:
       issues: write # comment on released issues
       pull-requests: write # comment on release pull requests
       id-token: write # enable use of oidc for npm provenence
-
-    env:
-      python-version: ${{ inputs.python-version }}
 
     steps:
       - uses: actions/checkout@v4
