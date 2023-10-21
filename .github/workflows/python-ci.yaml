@@ -22,6 +22,11 @@ on:
         required: false
         default: 1.6.0
 
+      poetry-test-command:
+        description: Command to pass to poetry to run tests
+        type: string
+        required: false
+
       node-version:
         description: Version of node to install for semantic-release
         type: string
@@ -78,6 +83,7 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
           poetry-version: ${{ inputs.poetry-version }}
+          command: ${{ inputs.poetry-test-command }}
           repository: ${{ steps.artifacts.outputs.repository-target }}  # we add /simple/ in poetry/connect
           repository-strict: true
           repository-auth: ${{ steps.artifacts.outputs.repository-auth }}

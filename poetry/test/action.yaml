@@ -18,6 +18,11 @@ inputs:
     description: Poetry version to use for orchestrating the tests
     required: true
 
+  command:
+    description: Command to run via poetry (poetry run <cmd>)
+    required: false
+    default: pytest
+
   repository:
     description: Comma-separated name and url for a custom/private package source
     required: false
@@ -25,7 +30,7 @@ inputs:
   repository-strict:
     description: Restrict packages to the specified source (ignored if no package-source)
     required: false
-    default: true
+    default: 'true'
 
   repository-auth:
     description: Basic auth for the package source (user:auth, ignored if no package-source))
@@ -62,4 +67,4 @@ runs:
     - name: "poetry: Test package"
       shell: bash
       run: |
-        poetry run tests
+        poetry run ${{ inputs.command }}
