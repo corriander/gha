@@ -31,6 +31,13 @@ inputs:
       Requires write permission on contents, issues, pull-requests and id-token
     required: true
 
+  pypi-token:
+    description: |
+      PYPI_TOKEN used to publish the package to pypi
+
+      Requires write permission on packages
+    required: false
+
   repository:
     description: Comma-separated name and url for a custom/private package source
     required: false
@@ -49,7 +56,9 @@ inputs:
       Whether to use dynamic versioning to generate the version number.
 
       If 'true' (default), the version number will be generated from tags.
-      If not 'true', the version will be taken from the pyproject.toml
+      If not 'true', the version will be taken from the pyproject.toml.
+
+      NOTE: this requires appropriate configuration in the pyproject.toml for poetry-dynamic-versioning
     required: false
     default: 'true'
 
@@ -71,6 +80,12 @@ runs:
         repository: ${{ inputs.repository }}
         type: push
         auth: ${{ inputs.repository-auth }}
+
+    - name: Configure PyPI token
+      if: inputs.pypi-token != ''
+      shell: bash
+      run: |
+        poetry config pypi-token.pypi ${{ inputs.pypi-token }}
 
       # use pdv to build the package without modifying the repo
       # pip cache is global, so this should be cached
@@ -95,6 +110,7 @@ runs:
         #release_name: ... # possible to override sr's semver name with the pep440 one here via dunamai?
 
     - name: Publish
+      if: inputs.pypi-token != '' || inputs.repository != ''
       shell: bash
       run: |
         repo=${{ inputs.repository }}
