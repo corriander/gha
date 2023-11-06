@@ -38,11 +38,20 @@ inputs:
   repository-strict:
     description: Restrict packages to the specified source (ignored if no package-source)
     required: false
-    default: true
+    default: 'true'
 
   repository-auth:
     description: Basic auth for the package source (user:auth, ignored if no package-source))
     required: false
+
+  dynamic-versioning:
+    description: |
+      Whether to use dynamic versioning to generate the version number.
+
+      If 'true' (default), the version number will be generated from tags.
+      If not 'true', the version will be taken from the pyproject.toml
+    required: false
+    default: 'true'
 
 
 runs:
@@ -57,6 +66,7 @@ runs:
 
       # TODO: tweak API - just supply one or both repository-target/source and set them
     - uses: corriander/gha/poetry/connect@main
+      if: inputs.repository != ''
       with:
         repository: ${{ inputs.repository }}
         type: push
@@ -65,6 +75,7 @@ runs:
       # use pdv to build the package without modifying the repo
       # pip cache is global, so this should be cached
     - name: Install poetry plugins
+      if: inputs.dynamic-versioning == 'true'
       shell: bash
       run: |
         ~/.local/venv/bin/pip install 'poetry-dynamic-versioning[plugin]'
@@ -87,4 +98,8 @@ runs:
       shell: bash
       run: |
         repo=${{ inputs.repository }}
-        poetry publish --repository=${repo%%:*}
+        if [[ -n "$repo" ]]; then
+          poetry publish --repository=${repo%%:*}
+        else
+          poetry publish
+        fi
