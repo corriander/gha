@@ -35,7 +35,7 @@ inputs:
   repository-auth:
     description: Basic auth for the package source (user:auth, ignored if no package-source))
     required: false
-      
+
 
 runs:
   using: composite

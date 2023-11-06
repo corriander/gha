@@ -40,6 +40,7 @@ runs:
         cache: pip
   
     - name: Configure poetry cache
+      if: runner.os == 'Linux'
       id: poetry-cache
       uses: actions/cache@v3
       with:
@@ -49,6 +50,7 @@ runs:
         key: poetry-${{ inputs.poetry-version }}-${{ inputs.python-version }}-${{ runner.os }}
   
     - name: Prepare cache
+      if: runner.os == 'Linux'
       id: prepare-project-cache
       shell: bash
       run: |
@@ -67,7 +69,9 @@ runs:
   
         echo "key=${runspec_key}" | tee -a $GITHUB_OUTPUT
   
+    # TODO: see snok/install-poetry docs for a wheel-based cache on windows
     - name: Configure dependency cache
+      if: runner.os == 'Linux'
       id: project-cache
       uses: actions/cache@v3
       with:
@@ -76,7 +80,7 @@ runs:
         key: project-venv-${{ inputs.cache-name }}-${{ steps.prepare-project-cache.outputs.key }}
 
     - name: Install and configure Poetry
-      if: steps.poetry-cache.outputs.cache-hit != 'true'
+      if: runner.os != 'Linux' || steps.poetry-cache.outputs.cache-hit != 'true'
       uses: snok/install-poetry@v1
       with:
         version: ${{ inputs.poetry-version }}
