@@ -46,7 +46,7 @@ runs:
         path: |
           ~/.local
           poetry.toml
-        key: poetry-${{ inputs.poetry-version }}
+        key: poetry-${{ inputs.poetry-version }}-${{ inputs.python-version }}-${{ runner.os }}
   
     - name: Prepare cache
       id: prepare-project-cache
