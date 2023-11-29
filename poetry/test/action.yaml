@@ -68,3 +68,5 @@ runs:
       shell: bash
       run: |
         poetry run ${{ inputs.command }}
+      env:
+        PYTEST_ADDOPTS: "--color=yes"
