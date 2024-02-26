@@ -17,7 +17,7 @@ runs:
   steps:
     - name: Configure node cache
       id: node-cache
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: ~/.npm
         key: ${{ runner.os }}-${{ env.name }}-${{ hashFiles('.github/workflows/**') }}

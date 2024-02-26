@@ -31,7 +31,7 @@ on:
         description: Version of node to install for semantic-release
         type: string
         required: false
-        default: '18'
+        default: '20'
 
       semantic-release-version:
         description: Version of semantic-release tool to use
