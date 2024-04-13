@@ -49,6 +49,12 @@ on:
         type: string
         required: false
 
+      upload-coverage:
+        description: Whether to upload coverage to codecov.io
+        type: boolean
+        required: false
+        default: false
+
 
 jobs:
   validation:
@@ -87,6 +93,11 @@ jobs:
           repository: ${{ steps.artifacts.outputs.repository-target }}  # we add /simple/ in poetry/connect
           repository-strict: true
           repository-auth: ${{ steps.artifacts.outputs.repository-auth }}
+
+      - uses: corriander/gha/codecov.io/upload@main
+        if: ${{ inputs.upload-coverage && matrix.python-version == inputs.python-version && matrix.os == 'ubuntu-latest' }}}
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
 
 
   release:
