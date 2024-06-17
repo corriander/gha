@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.4.0](https://github.com/corriander/gha/compare/v0.3.0...v0.4.0) (2024-06-17)
+
+
+### Features
+
+* add postgres service to python ci validation ([24fbbba](https://github.com/corriander/gha/commit/24fbbba66134c8e4303911a6d63b9c6725ad3ba7))
+* support codecov.io in python ci ([324eb19](https://github.com/corriander/gha/commit/324eb1922179829758e726ffddf4fbf5837e8d70))
+
+
+### Bug Fixes
+
+* always generate cov reports ([ecc81f6](https://github.com/corriander/gha/commit/ecc81f6a58d288f441fe37d168d2e1d28654ad1e))
+* update setup-node action ([a94c09e](https://github.com/corriander/gha/commit/a94c09e9a8e08a750fa1f223153c42f77378074b))
+
 ## [0.3.0](https://github.com/corriander/gha/compare/v0.2.1...v0.3.0) (2024-02-26)
 
 
