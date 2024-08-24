@@ -20,7 +20,7 @@ inputs:
       This doesn't affect pushing packages; poetry is already capable of 
       publishing to PyPI without this action.
     required: false
-    default: true
+    default: 'true'
 
   auth:
     description: Basic HTTP authentication {user}:{pass}
@@ -36,6 +36,10 @@ runs:
         extra_args=
         if [ "${{ inputs.strict }}" == "true" ]; then
           extra_args="--priority=default"
+        else
+          # poetry warns in future pypi will be auto-disabled if a custom primary
+          # source is set. Set pypi as fallback for packages not on codeartifact
+          poetry source add pypi
         fi
         repo=${{ inputs.repository }}
         poetry source add ${extra_args} ${repo/:/ }simple/
@@ -53,4 +57,3 @@ runs:
         auth=${{ inputs.auth }}
         repo=${{ inputs.repository }}
         poetry config http-basic.${repo%%:*} ${auth/:/ }
-

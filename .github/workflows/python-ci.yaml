@@ -27,6 +27,12 @@ on:
         type: string
         required: false
 
+      poetry-strict:
+        description: Whether to restrict poetry install to the specified repository
+        type: boolean
+        required: false
+        default: false
+
       node-version:
         description: Version of node to install for semantic-release
         type: string
@@ -106,7 +112,7 @@ jobs:
           poetry-version: ${{ inputs.poetry-version }}
           command: ${{ inputs.poetry-test-command }}
           repository: ${{ steps.artifacts.outputs.repository-target }}  # we add /simple/ in poetry/connect
-          repository-strict: true
+          repository-strict: ${{ inputs.poetry-strict }}
           repository-auth: ${{ steps.artifacts.outputs.repository-auth }}
 
       - uses: corriander/gha/codecov.io/upload@main
