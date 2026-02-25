@@ -20,6 +20,10 @@ inputs:
     description: "Minimum coverage percentage required (default: 0, meaning no minimum)"
     default: '0'
 
+  test-command:
+    description: "The command to run tests (e.g. pytest)"
+    default: "pytest"
+
 runs:
   using: composite
   steps:
