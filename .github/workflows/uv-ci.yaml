@@ -1,0 +1,67 @@
+name: Reusable UV CI/CD
+
+on:
+  workflow_call:
+    inputs:
+      python-version:
+        description: "The python version to use"
+        required: false
+        type: string
+        default: "3.12"
+      working-directory:
+        description: "The working directory for the project"
+        required: false
+        type: string
+        default: "."
+      test-command:
+        description: "Command to run tests"
+        required: false
+        type: string
+        default: "pytest"
+      coverage-limit:
+        description: "Fail if coverage is below this limit"
+        required: false
+        type: number
+        default: 0
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  test-and-qa:
+    name: 🧪 Test & QA
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: 🐍 Set up Python & UV
+        uses: astral-sh/setup-uv@v6
+        with:
+          python-version: ${{ inputs.python-version }}
+          enable-cache: true
+
+      - name: 🛡️ Run QA
+        uses: corriander/gha/uv/qa@v0.5
+        with:
+          working-directory: ${{ inputs.working-directory }}
+
+      - name: 🧪 Run Tests
+        uses: corriander/gha/uv/test@v0.5
+        with:
+          working-directory: ${{ inputs.working-directory }}
+          test-command: ${{ inputs.test-command }}
+          coverage-limit: ${{ inputs.coverage-limit }}
+
+  release:
+    name: 📦 Release Please
+    needs: test-and-qa
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: googleapis/release-please-action@v4
+        with:
+          # Assumes a release-please-config.json and .release-please-manifest.json are present
+          # or uses defaults if not (though manifest is recommended)
+          token: ${{ secrets.GITHUB_TOKEN }}
+          target-branch: main
