@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.1](https://github.com/corriander/gha/compare/v0.5.0...v0.5.1) (2026-02-25)
+
+
+### Bug Fixes
+
+* missing python test command (default pytest) ([3e1ee6e](https://github.com/corriander/gha/commit/3e1ee6e1cdc51902c6144f8db0930c565395d318))
+
 ## [0.5.0](https://github.com/corriander/gha/compare/v0.4.0...v0.5.0) (2026-02-25)
 
 
