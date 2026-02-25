@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.0](https://github.com/corriander/gha/compare/v0.5.1...v0.6.0) (2026-02-25)
+
+
+### Features
+
+* add reusable uv ci workflow with examples ([cc3d413](https://github.com/corriander/gha/commit/cc3d413505526059c1e9ead4625fde32b13aa57c))
+
 ## [0.5.1](https://github.com/corriander/gha/compare/v0.5.0...v0.5.1) (2026-02-25)
 
 
