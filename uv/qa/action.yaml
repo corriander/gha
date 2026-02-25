@@ -1,0 +1,106 @@
+name: QA for python uv project
+description: |
+  Runs code quality checks (formatting, linting, type checking) for a python uv project.
+
+  Pre-requisites
+  ---
+    - the repo is checked out
+    - uv is installed and configured
+
+
+inputs:
+  working-directory:
+    description: The working directory to run the action in (relative to the repository root)
+    required: false
+    default: .
+
+  ignore-errors:
+    description: If true, exit with 0 even if errors are found (annotates only).
+    required: false
+    default: 'false'
+
+outputs:
+  qa-outcome:
+    description: "The outcome of the QA checks: 'success' or 'failure'"
+    value: ${{ steps.check-status.outputs.qa-outcome }}
+
+runs:
+  using: composite
+  steps:
+    - uses: astral-sh/setup-uv@v6
+      with:
+        enable-cache: true
+
+    - id: format
+      run: uv run ruff format --check . || echo "failed" > format_status
+      continue-on-error: true
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+
+    - id: lint
+      run: uv run ruff check . --output-format=github || echo "failed" > lint_status
+      continue-on-error: true
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+
+    - id: types
+      run: uv run ty check . --output-format=github || echo "failed" > types_status
+      continue-on-error: true
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+       
+
+    - name: Check Status & Report
+      id: check-status
+      run: |
+        FAILED=0
+        SUMMARY_MSG=""
+
+        # Check for failure markers files created by previous steps
+        if [ -f format_status ]; then
+          echo "::error::❌ Formatting failed"
+          SUMMARY_MSG="${SUMMARY_MSG}| ❌ Formatting | Failed |\n"
+          FAILED=1
+        else
+          SUMMARY_MSG="${SUMMARY_MSG}| ✅ Formatting | Passed |\n"
+        fi
+
+        if [ -f lint_status ]; then
+          echo "::error::❌ Linting failed"
+          SUMMARY_MSG="${SUMMARY_MSG}| ❌ Linting | Failed |\n"
+          FAILED=1
+        else
+          SUMMARY_MSG="${SUMMARY_MSG}| ✅ Linting | Passed |\n"
+        fi
+
+        if [ -f types_status ]; then
+          echo "::error::❌ Type Check failed"
+          SUMMARY_MSG="${SUMMARY_MSG}| ❌ Types | Failed |\n"
+          FAILED=1
+        else
+          SUMMARY_MSG="${SUMMARY_MSG}| ✅ Types | Passed |\n"
+        fi
+        
+        # 📢 WRITE THE SUMMARY TO GITHUB UI
+        echo "### 🛡️ Quality Check Report" >> $GITHUB_STEP_SUMMARY
+        echo "| Check | Status |" >> $GITHUB_STEP_SUMMARY
+        echo "| :--- | :--- |" >> $GITHUB_STEP_SUMMARY
+        echo -e "$SUMMARY_MSG" >> $GITHUB_STEP_SUMMARY
+
+        if [ $FAILED -eq 1 ]; then
+          echo "qa-outcome=failure" >> $GITHUB_OUTPUT
+          echo "### ⚠️ ISSUES FOUND" >> $GITHUB_STEP_SUMMARY
+          echo "We found issues in the code. Please check the logs/annotations above." >> $GITHUB_STEP_SUMMARY
+
+          if [ "${{ inputs.ignore-errors }}" == "true" ]; then
+            echo "::warning::QA issues found (Soft Fail enabled). Please fix these before merging!"
+            exit 0
+          else
+            echo "::error::QA Failed. Stopping build."
+            exit 1
+          fi
+        else
+          echo "qa-outcome=success" >> $GITHUB_OUTPUT
+        fi
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}

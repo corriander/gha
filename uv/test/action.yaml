@@ -1,0 +1,90 @@
+name: Test python uv project (with pytest)
+description: |
+  Sets up uv and the project for testing with caching.
+
+  The project is assumed to use pytest directly to run tests, but this can be 
+  changed via the `test-command` input.
+
+  Pre-requisites
+  ---
+    - the repo is checked out
+    - uv is installed and configured
+
+
+inputs:
+  working-directory:
+    description: "The working directory to run the tests in (relative to the repository root)"
+    default: .
+
+  coverage-limit:
+    description: "Minimum coverage percentage required (default: 0, meaning no minimum)"
+    default: '0'
+
+runs:
+  using: composite
+  steps:
+    - uses: astral-sh/setup-uv@v6
+      with:
+        enable-cache: true
+
+    - name: Run tests
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        # Start with color option, which we always want
+        EXTRA_ARGS="--color=yes"
+
+        # Only enable coverage flags if a limit is set
+        LIMIT="${{ inputs.coverage-limit }}"
+        if [ "$LIMIT" -gt 0 ]; then
+          echo "🔍 Coverage enforcement enabled (Limit: $LIMIT%)"
+          # append the standard pytest-cov flags
+          EXTRA_ARGS="$EXTRA_ARGS --cov --cov-report=term-missing --cov-fail-under=$LIMIT"
+        else
+          echo "⏩ Coverage disabled (Limit is 0)"
+        fi
+
+        # Construct the full command
+        CMD="uv run ${{ inputs.test-command }} $EXTRA_ARGS"
+
+        echo "Running: $CMD"
+
+        # allow the command to fail (set +e) so we can capture the exit code
+        set +e
+        set -o pipefail
+
+        # Run command, pipe to file (for parsing) and stdout (for logs)
+        eval $CMD 2>&1 | tee pytest-output.log
+        EXIT_CODE=$?
+
+        set -e
+
+        # Generate GitHub Summary (Only if coverage was requested)
+        if [ "$LIMIT" -gt 0 ]; then
+          # Clean ANSI colors to parse the text output (|| true to avoid failure if grep finds nothing)
+          TOTAL_COV=$(cat pytest-output.log | sed 's/\x1b\[[0-9;]*m//g' | grep "TOTAL" | awk '{print $NF}' || true)
+
+          # Fallback if parsing fails
+          if [ -n "$TOTAL_COV" ]; then
+              echo "### 🧪 Test Coverage Report" >> $GITHUB_STEP_SUMMARY
+              echo "| Metric | Value |" >> $GITHUB_STEP_SUMMARY
+              echo "| :--- | :--- |" >> $GITHUB_STEP_SUMMARY
+
+              if [ $EXIT_CODE -eq 0 ]; then
+                echo "| Status | ✅ Passed |" >> $GITHUB_STEP_SUMMARY
+              else
+                echo "| Status | ❌ **Tests Failed** |" >> $GITHUB_STEP_SUMMARY
+              fi
+
+              echo "| Threshold | $LIMIT% |" >> $GITHUB_STEP_SUMMARY
+              echo "| **Actual** | **$TOTAL_COV** |" >> $GITHUB_STEP_SUMMARY
+          else
+              # Graceful fallback for skipped tests (command='true')
+              echo "⚠️ No coverage data found in logs (Tests likely skipped)."
+              echo "### 🧪 Test Coverage Skipped" >> $GITHUB_STEP_SUMMARY
+              echo "_No coverage report generated._" >> $GITHUB_STEP_SUMMARY
+          fi
+        fi
+
+        # Exit with the actual test result
+        exit $EXIT_CODE
