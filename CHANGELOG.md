@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.0](https://github.com/corriander/gha/compare/v0.4.0...v0.5.0) (2026-02-25)
+
+
+### Features
+
+* add uv qa and test ([2912834](https://github.com/corriander/gha/commit/2912834a45a8c11b92b02250422a684ad6bb39fe))
+
 ## [0.4.0](https://github.com/corriander/gha/compare/v0.3.0...v0.4.0) (2024-08-24)
 
 
