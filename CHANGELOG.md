@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.1](https://github.com/corriander/gha/compare/v0.6.0...v0.6.1) (2026-03-15)
+
+
+### Bug Fixes
+
+* node20 deprecations ([46a9b04](https://github.com/corriander/gha/commit/46a9b047a495a662e4501bf565692821744f929a))
+
 ## [0.6.0](https://github.com/corriander/gha/compare/v0.5.1...v0.6.0) (2026-02-25)
 
 
